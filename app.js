@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const connectDB = require('./src/config/ConnectToMongoDb');
 const dotenv = require('dotenv');
+const patientRoutes = require('./src/routes/patientRoutes');
 dotenv.config(); 
 
 // Initialize the app
@@ -22,7 +23,7 @@ app.get("/", (req, res) => {
 
 
 app.use("/api/auth", authRoutes);
-
+app.use("/patients", patientRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

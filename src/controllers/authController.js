@@ -1,15 +1,17 @@
-// src/controllers/authController.js
 const Otp = require("../models/Otp");
+// const User = require("../models/User");
 const { sendOtpToMobile } = require("../utils/sendOtp");
+const bcrypt = require("bcrypt");
+const Patient = require("../models/Patient");
+const jwt = require("jsonwebtoken");
 
-// POST /api/auth/send-otp
-exports.sendOtp = async (req, res) => {
+// --- Send OTP ---
+const sendOtp = async (req, res) => {
   const { mobile } = req.body;
-
   if (!mobile) return res.status(400).json({ message: "Mobile is required" });
 
   const otp = await sendOtpToMobile(mobile);
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // expires in 5 min
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
   await Otp.findOneAndUpdate(
     { mobile },
@@ -17,28 +19,41 @@ exports.sendOtp = async (req, res) => {
     { upsert: true, new: true }
   );
 
-  return res.status(200).json({ message: "OTP sent successfully" });
+  return res
+    .status(200)
+    .json({ success: true, message: "OTP sent successfully" });
 };
 
-// POST /api/auth/verify-otp
-exports.verifyOtp = async (req, res) => {
+// --- Verify OTP ---
+const verifyOtp = async (req, res) => {
   const { mobile, otp } = req.body;
 
-  if (!mobile || !otp) return res.status(400).json({ message: "Missing fields" });
+  if (!mobile || !otp)
+    return res.status(400).json({ message: "Missing fields" });
 
   const record = await Otp.findOne({ mobile });
 
   if (!record)
     return res.status(400).json({ message: "OTP not found or expired" });
-
   if (record.otp !== otp)
     return res.status(400).json({ message: "Invalid OTP" });
-
   if (record.expiresAt < Date.now())
     return res.status(400).json({ message: "OTP expired" });
 
-  // Mark mobile verified (you can flag this or proceed to register)
-  await Otp.deleteOne({ mobile });
+  await Otp.findOneAndUpdate({ mobile }, { verified: true });
 
-  return res.status(200).json({ message: "OTP verified successfully" });
+  return res
+    .status(200)
+    .json({ success: true, message: "OTP verified successfully" });
+};
+
+
+
+
+
+
+
+module.exports = {
+  sendOtp,
+  verifyOtp, 
 };
