@@ -3,21 +3,20 @@ const jwt = require("jsonwebtoken");
 const Otp = require("../models/Otp");
 
 // Generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-};
+const generateToken = require("../utils/generateToken");
 
+// @desc    Register a new patient
+// @route   POST /api/patients/register
+// @access  Public
 // @desc    Register a new patient
 // @route   POST /api/patients/register
 // @access  Public
 exports.registerPatient = async (req, res) => {
   try {
-    const { name, email, mobile, password, hospital_id } = req.body;
+    const { name, email, mobile, password, hospital_id, dob, gender, contact, address } = req.body;
 
-    // Check if patient exists
-    const existing = await Patient.findOne({ email });
+    // Check if patient exists (by email or mobile)
+    const existing = await Patient.findOne({ $or: [{ email }, { mobile }] });
     if (existing) {
       return res.status(400).json({ message: "Patient already exists" });
     }
@@ -27,19 +26,33 @@ exports.registerPatient = async (req, res) => {
       email,
       mobile,
       password,
-      hospital_id
+      hospital_id,
+      dob,
+      gender,
+      contact,
+      address
     });
 
     await patient.save();
 
     res.status(201).json({
+      success: true,
       message: "Patient registered successfully",
-      token: generateToken(patient._id)
+      token: generateToken(patient._id),
+      patient: {
+        id: patient._id,
+        name: patient.name,
+        email: patient.email,
+        mobile: patient.mobile,
+        hospital_id: patient.hospital_id,
+        dob: patient.dob
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // @desc    Login patient
 // @route   POST /api/patients/login
@@ -63,7 +76,7 @@ exports.loginPatient = async (req, res) => {
 
     res.json({
       message: "Logged in successfully",
-      token: generateToken(patient._id)
+      token: generateToken(patient._id , "patient")
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

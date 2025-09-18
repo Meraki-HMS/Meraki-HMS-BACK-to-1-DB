@@ -6,7 +6,6 @@ const PatientSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },   // ✅ Add email for login
   mobile: { type: String, required: true, unique: true },  // ✅ Add mobile for login
   password: { type: String, required: true },              // ✅ Add password field
-  hospital_id: { type: String , required: true }, // ✅ Reference hospital
   dob: { type: Date, required: true },    
   gender: String,
   contact: String,
