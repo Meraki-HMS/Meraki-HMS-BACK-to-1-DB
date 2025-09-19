@@ -4,6 +4,8 @@ const connectDB = require('./src/config/ConnectToMongoDb');
 const dotenv = require('dotenv');
 const patientRoutes = require('./src/routes/patientRoutes');
 const receptionistRoutes = require('./src/routes/receptionistRoutes');
+const doctorRoutes = require('./src/routes/doctorRoutes');
+const hospitalRoutes = require('./src/routes/hospitalRoutes');
 dotenv.config(); 
 
 // Initialize the app
@@ -26,6 +28,9 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/patients", patientRoutes);
 app.use("/receptionists", receptionistRoutes);
+app.use("/doctors", doctorRoutes);
+app.use("/hospitals", hospitalRoutes);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
