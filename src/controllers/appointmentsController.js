@@ -2,7 +2,9 @@ const ReceptionistPatient = require("../models/receptionist_patient");
 const DoctorAvailability = require("../models/DoctorAvailability");
 const Appointment = require("../models/Appointment");
 
+// ==============================
 // Register patient by receptionist
+// ==============================
 exports.registerPatient = async (req, res) => {
   try {
     const patient = new ReceptionistPatient(req.body);
@@ -13,7 +15,9 @@ exports.registerPatient = async (req, res) => {
   }
 };
 
+// ==============================
 // Set doctor availability (multiple slots)
+// ==============================
 exports.setDoctorAvailability = async (req, res) => {
   try {
     const { hospitalId, doctorId, date, slots } = req.body;
@@ -33,19 +37,24 @@ exports.setDoctorAvailability = async (req, res) => {
   }
 };
 
+// ==============================
 // Fetch available slots for a doctor on a date
+// ==============================
 exports.getAvailableSlots = async (req, res) => {
   try {
     const { doctorId, date } = req.params;
-    const availability = await DoctorAvailability.findOne({ doctorId, date });
 
+    const availability = await DoctorAvailability.findOne({ doctorId, date });
     if (!availability) {
       return res.status(404).json({ message: "No availability found" });
     }
 
     // Get booked slots
     const bookedAppointments = await Appointment.find({ doctorId, date });
-    const bookedSlots = bookedAppointments.map(a => ({ start: a.slotStart, end: a.slotEnd }));
+    const bookedSlots = bookedAppointments.map(a => ({
+      start: a.slotStart,
+      end: a.slotEnd
+    }));
 
     // Filter only free slots
     const freeSlots = availability.slots.filter(
@@ -60,10 +69,24 @@ exports.getAvailableSlots = async (req, res) => {
   }
 };
 
+// ==============================
 // Book an appointment
+// ==============================
 exports.bookAppointment = async (req, res) => {
   try {
-    const { patientId, doctorId, hospitalId, date, slot } = req.body;
+    const {
+      patientId,
+      doctorId,
+      hospitalId,
+      date,
+      slot,
+      patientName,
+      department,
+      appointmentType,
+      sessionType,
+      reason,
+      slotDuration
+    } = req.body;
 
     // Check if slot already booked
     const existing = await Appointment.findOne({
@@ -83,7 +106,13 @@ exports.bookAppointment = async (req, res) => {
       hospitalId,
       date,
       slotStart: slot.start,
-      slotEnd: slot.end
+      slotEnd: slot.end,
+      patientName,
+      department,
+      appointmentType,
+      sessionType,
+      reason,
+      slotDuration
     });
 
     await appointment.save();
@@ -93,26 +122,32 @@ exports.bookAppointment = async (req, res) => {
   }
 };
 
+// ==============================
 // Get all appointments by hospital
+// ==============================
 exports.getAppointmentsByHospital = async (req, res) => {
   try {
     const { hospitalId } = req.params;
     const appointments = await Appointment.find({ hospitalId })
       .populate("patientId")
       .populate("doctorId");
+
     res.json(appointments);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
+// ==============================
 // Get doctor’s appointments by date
+// ==============================
 exports.getDoctorAppointmentsByDate = async (req, res) => {
   try {
     const { doctorId, date } = req.params;
     const appointments = await Appointment.find({ doctorId, date })
       .populate("patientId")
       .populate("doctorId");
+
     res.json(appointments);
   } catch (error) {
     res.status(400).json({ error: error.message });

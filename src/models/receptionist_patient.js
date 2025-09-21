@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const ReceptionistPatientSchema = new mongoose.Schema(
   {
@@ -15,7 +15,6 @@ const ReceptionistPatientSchema = new mongoose.Schema(
     email: { type: String },
     address: { type: String },
 
-    // optional extra info receptionist may enter
     guardianName: { type: String },
     guardianPhone: { type: String },
 
@@ -24,4 +23,4 @@ const ReceptionistPatientSchema = new mongoose.Schema(
   { collection: "receptionist_patients" }
 );
 
-export default mongoose.model("ReceptionistPatient", ReceptionistPatientSchema);
+module.exports = mongoose.model("ReceptionistPatient", ReceptionistPatientSchema);
