@@ -52,3 +52,31 @@ exports.getHospitalById = async (req, res) => {
     });
   }
 };
+
+// ✅ NEW: Get hospital by name (case-insensitive exact match)
+exports.getHospitalByName = async (req, res) => {
+  try {
+    const { name } = req.query;
+    if (!name) {
+      return res.status(400).json({ message: "Query parameter 'name' is required" });
+    }
+
+    // escape regex chars to avoid injection
+    const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const hospital = await Hospital.findOne({
+      name: { $regex: `^${escapeRegExp(name)}$`, $options: "i" },
+    });
+
+    if (!hospital) {
+      return res.status(404).json({ message: "Hospital not found" });
+    }
+
+    res.json(hospital);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching hospital by name",
+      error: error.message,
+    });
+  }
+};

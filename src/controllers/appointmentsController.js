@@ -129,8 +129,8 @@ exports.getAppointmentsByHospital = async (req, res) => {
   try {
     const { hospitalId } = req.params;
     const appointments = await Appointment.find({ hospitalId })
-      .populate("patientId")
-      .populate("doctorId");
+      // .populate("patientId")
+      // .populate("doctorId");
 
     res.json(appointments);
   } catch (error) {
@@ -145,8 +145,8 @@ exports.getDoctorAppointmentsByDate = async (req, res) => {
   try {
     const { doctorId, date } = req.params;
     const appointments = await Appointment.find({ doctorId, date })
-      .populate("patientId")
-      .populate("doctorId");
+      // .populate("patientId")
+      // .populate("doctorId");
 
     res.json(appointments);
   } catch (error) {
