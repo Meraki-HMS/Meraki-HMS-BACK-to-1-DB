@@ -3,6 +3,7 @@ const Appointment = require("../models/Appointment");
 const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
 const Patient = require("../models/Patient");
+const DoctorAvailability = require("../models/DoctorAvailability"); // ✅ added
 const mongoose = require("mongoose");
 
 /* ---------- Helpers ---------- */
@@ -71,71 +72,58 @@ const getDoctorsByDepartment = async (req, res) => {
   }
 };
 
-// GET available slots
+// ✅ GET available slots (now using DoctorAvailability schema)
 const getAvailableSlots = async (req, res) => {
   try {
     const { doctorId, date } = req.query;
-    if (!doctorId || !date) return res.status(400).json({ message: "doctorId and date required" });
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ message: "date must be YYYY-MM-DD" });
+    if (!doctorId || !date) {
+      return res.status(400).json({ message: "doctorId and date required" });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ message: "date must be YYYY-MM-DD" });
+    }
 
+    // 1. Check doctor exists
     const doctor = await Doctor.findById(doctorId);
     if (!doctor) return res.status(404).json({ message: "Doctor not found" });
     if (!doctor.isAvailable) return res.status(400).json({ message: "Doctor is not available" });
 
-    // holiday check
-    if (doctor.holidays && doctor.holidays.length > 0) {
-      for (const h of doctor.holidays) {
-        if (isSameDate(h, date)) {
-          return res.json({ date, slots: [] });
-        }
+    // 2. Find availability entry for doctor & date
+    const availability = await DoctorAvailability.findOne({ doctorId, date });
+    if (!availability) {
+      return res.json({ doctorId, date, slots: [] });
+    }
+
+    // 3. Get already booked appointments
+    const bookedAppointments = await Appointment.find({ doctorId, date });
+    const bookedSlots = bookedAppointments.map(ap => ({
+      start: ap.slotStart,
+      end: ap.slotEnd
+    }));
+
+    // 4. Build 30-min slots from availability.slots
+    const allCandidateSlots = [];
+    for (const slot of availability.slots) {
+      let start = parseTimeToMinutes(slot.start);
+      const end = parseTimeToMinutes(slot.end);
+      while (start + 30 <= end) {
+        allCandidateSlots.push({
+          start: minutesToTimeString(start),
+          end: minutesToTimeString(start + 30)
+        });
+        start += 30;
       }
     }
 
-    const slotDuration = doctor.slotSize || 30;
-    const workStart = parseTimeToMinutes(doctor.workingHours.start);
-    const workEnd = parseTimeToMinutes(doctor.workingHours.end);
-
-    const existing = await Appointment.find({ doctorId: doctor._id, date });
-
-    const candidateSlots = [];
-    for (let start = workStart; start + slotDuration <= workEnd; start += slotDuration) {
-      const end = start + slotDuration;
-
-      let inBreak = false;
-      if (doctor.breaks && doctor.breaks.length) {
-        for (const br of doctor.breaks) {
-          const brStart = parseTimeToMinutes(br.start);
-          const brEnd = parseTimeToMinutes(br.end);
-          if (overlaps(start, end, brStart, brEnd)) {
-            inBreak = true;
-            break;
-          }
-        }
-      }
-      if (inBreak) continue;
-
-      let conflict = false;
-      for (const ap of existing) {
-        const aStart = parseTimeToMinutes(ap.slotStart);
-        const aEnd = parseTimeToMinutes(ap.slotEnd);
-        if (overlaps(start, end, aStart, aEnd)) {
-          conflict = true;
-          break;
-        }
-      }
-      if (conflict) continue;
-
-      candidateSlots.push({
-        slotStart: minutesToTimeString(start),
-        slotEnd: minutesToTimeString(end)
-      });
-    }
+    // 5. Filter out booked ones
+    const freeSlots = allCandidateSlots.filter(slot =>
+      !bookedSlots.some(b => b.start === slot.start && b.end === slot.end)
+    );
 
     res.json({
       doctorId,
       date,
-      slotDuration,
-      slots: candidateSlots
+      slots: freeSlots
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -186,35 +174,10 @@ const bookAppointment = async (req, res) => {
     if (!patient) return res.status(404).json({ message: "Patient not found" });
 
     const slotDuration = Number(bodySlotDuration) || doctor.slotSize || 30;
-
     const startMin = parseTimeToMinutes(slotStart);
     const endMin = startMin + Number(slotDuration);
 
-    const workStartMin = parseTimeToMinutes(doctor.workingHours.start);
-    const workEndMin = parseTimeToMinutes(doctor.workingHours.end);
-
-    if (startMin < workStartMin || endMin > workEndMin) {
-      return res.status(400).json({ message: "Slot is outside doctor's working hours" });
-    }
-
-    if (doctor.holidays && doctor.holidays.length) {
-      for (const h of doctor.holidays) {
-        if (isSameDate(h, date)) {
-          return res.status(400).json({ message: "Doctor is on holiday" });
-        }
-      }
-    }
-
-    if (doctor.breaks && doctor.breaks.length) {
-      for (const br of doctor.breaks) {
-        const brStart = parseTimeToMinutes(br.start);
-        const brEnd = parseTimeToMinutes(br.end);
-        if (overlaps(startMin, endMin, brStart, brEnd)) {
-          return res.status(400).json({ message: "Slot overlaps doctor's break" });
-        }
-      }
-    }
-
+    // Check for conflicts
     const existing = await Appointment.find({ doctorId: doctor._id, date });
     for (const ap of existing) {
       const aStart = parseTimeToMinutes(ap.slotStart);
@@ -280,7 +243,7 @@ const getHospitalAppointments = async (req, res) => {
 module.exports = {
   getDepartments,
   getDoctorsByDepartment,
-  getAvailableSlots,
+  getAvailableSlots,   // ✅ updated to use DoctorAvailability
   bookAppointment,
   getHospitalAppointments
 };

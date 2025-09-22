@@ -2,6 +2,7 @@ const ReceptionistPatient = require("../models/receptionist_patient");
 const DoctorAvailability = require("../models/DoctorAvailability");
 const Appointment = require("../models/Appointment");
 
+
 // ==============================
 // Register patient by receptionist
 // ==============================
@@ -38,7 +39,7 @@ exports.setDoctorAvailability = async (req, res) => {
 };
 
 // ==============================
-// Fetch available slots for a doctor on a date
+// Fetch available slots for a doctor on a date (split into 30-min intervals)
 // ==============================
 exports.getAvailableSlots = async (req, res) => {
   try {
@@ -51,17 +52,43 @@ exports.getAvailableSlots = async (req, res) => {
 
     // Get booked slots
     const bookedAppointments = await Appointment.find({ doctorId, date });
-    const bookedSlots = bookedAppointments.map(a => ({
-      start: a.slotStart,
-      end: a.slotEnd
-    }));
+    const bookedSet = new Set(bookedAppointments.map(a => `${a.slotStart}-${a.slotEnd}`));
 
-    // Filter only free slots
-    const freeSlots = availability.slots.filter(
-      slot => !bookedSlots.some(
-        booked => booked.start === slot.start && booked.end === slot.end
-      )
-    );
+    // Helpers
+    const parseTimeToMinutes = (t) => {
+      const [hh, mm] = t.split(":").map(Number);
+      return hh * 60 + mm;
+    };
+    const minutesToTimeString = (mins) => {
+      const hh = Math.floor(mins / 60).toString().padStart(2, "0");
+      const mm = (mins % 60).toString().padStart(2, "0");
+      return `${hh}:${mm}`;
+    };
+
+    // 🔑 Split availability slots into 30-minute sub-slots
+    const allCandidateSlots = [];
+    for (const slot of availability.slots) {
+      let start = parseTimeToMinutes(slot.start);
+      const end = parseTimeToMinutes(slot.end);
+
+      while (start + 30 <= end) {
+        const sStr = minutesToTimeString(start);
+        const eStr = minutesToTimeString(start + 30);
+        const key = `${sStr}-${eStr}`;
+
+        // push only if not already added
+        if (!allCandidateSlots.some(x => x.start === sStr && x.end === eStr)) {
+          allCandidateSlots.push({ start: sStr, end: eStr, key });
+        }
+
+        start += 30;
+      }
+    }
+
+    // Remove booked ones
+    const freeSlots = allCandidateSlots
+      .filter(slot => !bookedSet.has(`${slot.start}-${slot.end}`))
+      .map(({ start, end }) => ({ start, end }));
 
     res.json(freeSlots);
   } catch (error) {

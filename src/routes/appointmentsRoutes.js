@@ -2,20 +2,22 @@ const express = require("express");
 const router = express.Router();
 const appointmentsController = require("../controllers/appointmentsController");
 
+const { isLoggedIn } = require("../middleware/authMiddleware");
+
 // Receptionist registers patient
-router.post("/register-patient", appointmentsController.registerPatient);
+router.post("/register-patient", isLoggedIn,appointmentsController.registerPatient);
 
 // Receptionist sets doctor availability
-router.post("/availability", appointmentsController.setDoctorAvailability);
+router.post("/availability", isLoggedIn, appointmentsController.setDoctorAvailability);
 
 // Fetch available slots for doctor by date
-router.get("/availability/:doctorId/:date", appointmentsController.getAvailableSlots);
+router.get("/availability/:doctorId/:date", isLoggedIn,appointmentsController.getAvailableSlots);
 
 // Book an appointment (with new fields)
-router.post("/book", appointmentsController.bookAppointment);
+router.post("/book", isLoggedIn, appointmentsController.bookAppointment);
 
 // Get all appointments by hospital
-router.get("/hospital/:hospitalId", appointmentsController.getAppointmentsByHospital);
+router.get("/hospital/:hospitalId", isLoggedIn,appointmentsController.getAppointmentsByHospital);
 
 // Get doctor appointments by date
 router.get("/doctor/:doctorId/:date", appointmentsController.getDoctorAppointmentsByDate);
