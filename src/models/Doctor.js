@@ -4,8 +4,8 @@ const bcrypt = require("bcrypt");
 const doctorSchema = new mongoose.Schema({
   doctor_id: { type: Number, unique: true, index: true }, // auto increment
   hospital_id: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Hospital",   // 🔗 reference Hospital collection
+    type: String, 
+       
     required: true 
   },
   name: { type: String, required: true, maxlength: 100 },

@@ -1,6 +1,8 @@
 const ReceptionistPatient = require("../models/receptionist_patient");
 const DoctorAvailability = require("../models/DoctorAvailability");
 const Appointment = require("../models/Appointment");
+const Hospital = require("../models/Hospital");   // 🆕 make sure Hospital model is imported
+const Doctor = require("../models/Doctor");       // 🆕 import Doctor model
 
 
 // ==============================
@@ -178,5 +180,60 @@ exports.getDoctorAppointmentsByDate = async (req, res) => {
     res.json(appointments);
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+// ==============================
+// Get departments by hospital (using hospital custom id)
+// ==============================
+exports.getDepartmentsByHospital = async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    if (!hospitalId) {
+      return res.status(400).json({ message: "hospitalId required" });
+    }
+
+    // ✅ Directly query doctors using hospitalId string (since Doctor.hospital_id is String)
+    const specializations = await Doctor.find({
+      hospital_id: hospitalId
+    }).distinct("specialization");
+
+    if (!specializations || specializations.length === 0) {
+      return res.json({ hospitalId, departments: [] }); // clean empty response
+    }
+
+    res.json({ hospitalId, departments: specializations });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ==============================
+// Get doctors by department & hospitalId
+// ==============================
+exports.getDoctorsByDepartment = async (req, res) => {
+  try {
+    const { hospitalId, department } = req.query;
+    if (!hospitalId || !department) {
+      return res.status(400).json({ message: "hospitalId and department required" });
+    }
+
+    // ✅ Fetch doctors where hospital_id = hospitalId (string) and specialization = department
+    const doctors = await Doctor.find({
+      hospital_id: hospitalId,
+      specialization: department
+    }).select("doctor_id name specialization contact email isAvailable");
+
+    if (!doctors || doctors.length === 0) {
+      return res.status(404).json({ message: "No doctors found for this department in hospital" });
+    }
+
+    res.json({
+      hospitalId,
+      department,
+      doctors
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

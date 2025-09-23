@@ -22,4 +22,12 @@ router.get("/hospital/:hospitalId", isLoggedIn,appointmentsController.getAppoint
 // Get doctor appointments by date
 router.get("/doctor/:doctorId/:date", appointmentsController.getDoctorAppointmentsByDate);
 
+// 🆕 New route to fetch departments by hospital custom id
+router.get("/departments/:hospitalId", appointmentsController.getDepartmentsByHospital);
+//Get doctors by department & hospitalId
+router.get("/doctors", appointmentsController.getDoctorsByDepartment);
+
+
+
+
 module.exports = router;
