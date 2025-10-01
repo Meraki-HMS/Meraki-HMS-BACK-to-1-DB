@@ -3,7 +3,7 @@ const DoctorAvailability = require("../models/DoctorAvailability");
 const Appointment = require("../models/Appointment");
 const Hospital = require("../models/Hospital");   // 🆕 make sure Hospital model is imported
 const Doctor = require("../models/Doctor");       // 🆕 import Doctor model
-
+const { cancelAppointment, rescheduleAppointment } = require("../services/appointmentService");
 
 // ==============================
 // Register patient by receptionist
@@ -53,7 +53,9 @@ exports.getAvailableSlots = async (req, res) => {
     }
 
     // Get booked slots
-    const bookedAppointments = await Appointment.find({ doctorId, date });
+    // const bookedAppointments = await Appointment.find({ doctorId, date });
+    const bookedAppointments = await Appointment.find({ doctorId, date, status: "Scheduled" });
+
     const bookedSet = new Set(bookedAppointments.map(a => `${a.slotStart}-${a.slotEnd}`));
 
     // Helpers
@@ -235,5 +237,28 @@ exports.getDoctorsByDepartment = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// Cancel
+exports.cancelAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const result = await cancelAppointment(appointmentId);
+    res.json({ message: "Appointment cancelled successfully", appointment: result });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// Reschedule
+exports.rescheduleAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { newSlotStart, newSlotDuration } = req.body;
+    const result = await rescheduleAppointment(appointmentId, newSlotStart, newSlotDuration);
+    res.json({ message: "Appointment rescheduled successfully", appointment: result });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };

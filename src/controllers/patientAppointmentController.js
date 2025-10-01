@@ -4,6 +4,7 @@ const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
 const Patient = require("../models/Patient");
 const DoctorAvailability = require("../models/DoctorAvailability"); // ✅ added
+const { cancelAppointment, rescheduleAppointment } = require("../services/appointmentService");
 const mongoose = require("mongoose");
 
 /* ---------- Helpers ---------- */
@@ -109,7 +110,9 @@ const getAvailableSlots = async (req, res) => {
     }
 
     // 3. Get already booked appointments
-    const bookedAppointments = await Appointment.find({ doctorId, date });
+    // const bookedAppointments = await Appointment.find({ doctorId, date });
+    const bookedAppointments = await Appointment.find({ doctorId, date, status: "Scheduled" });
+
     const bookedSlots = bookedAppointments.map((ap) => ({
       start: ap.slotStart,
       end: ap.slotEnd,
@@ -279,10 +282,36 @@ const getHospitalAppointments = async (req, res) => {
   }
 };
 
+// Cancel
+const cancelAppointmentController = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const result = await cancelAppointment(appointmentId);
+    res.json({ message: "Appointment cancelled successfully", appointment: result });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// Reschedule
+const rescheduleAppointmentController = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { newSlotStart, newSlotDuration } = req.body;
+    const result = await rescheduleAppointment(appointmentId, newSlotStart, newSlotDuration);
+    res.json({ message: "Appointment rescheduled successfully", appointment: result });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+
 module.exports = {
   getDepartments,
   getDoctorsByDepartment,
   getAvailableSlots, // ✅ updated to use DoctorAvailability
   bookAppointment,
   getHospitalAppointments,
+  cancelAppointment: cancelAppointmentController,
+  rescheduleAppointment: rescheduleAppointmentController,
 };

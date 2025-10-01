@@ -26,6 +26,10 @@ router.get("/doctor/:doctorId/:date", appointmentsController.getDoctorAppointmen
 router.get("/departments/:hospitalId", appointmentsController.getDepartmentsByHospital);
 //Get doctors by department & hospitalId
 router.get("/doctors", appointmentsController.getDoctorsByDepartment);
+//Cancel Appointment
+router.put("/:appointmentId/cancel", isLoggedIn, appointmentsController.cancelAppointment);
+//Reschedule Appointment    
+router.put("/:appointmentId/reschedule", isLoggedIn, appointmentsController.rescheduleAppointment);
 
 
 
