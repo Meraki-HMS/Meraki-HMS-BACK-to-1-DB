@@ -10,7 +10,7 @@ const ReceptionistSchema = new mongoose.Schema({
   joined_on: { type: Date, default: Date.now },
 });
 
-// ✅ Hash password before saving
+// ✅ Hash password before savingx`
 ReceptionistSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
