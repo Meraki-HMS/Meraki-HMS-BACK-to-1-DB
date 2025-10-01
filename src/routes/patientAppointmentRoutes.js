@@ -6,7 +6,9 @@ const {
   getDoctorsByDepartment,
   getAvailableSlots,
   bookAppointment,
-  getHospitalAppointments
+  getHospitalAppointments,
+  cancelAppointment,          // ✅ new
+  rescheduleAppointment       // ✅ new
 } = require("../controllers/patientAppointmentController");
 
 const { isLoggedIn } = require("../middleware/authMiddleware");
@@ -16,5 +18,8 @@ router.get("/doctors", getDoctorsByDepartment);
 router.get("/available-slots", getAvailableSlots);
 router.post("/book", isLoggedIn, bookAppointment);
 router.get("/hospital/:hospitalId", isLoggedIn, getHospitalAppointments);
+router.put("/:appointmentId/cancel", isLoggedIn, cancelAppointment);
+router.put("/:appointmentId/reschedule", isLoggedIn, rescheduleAppointment);
+
 
 module.exports = router;
