@@ -28,6 +28,8 @@ router.get("/departments/:hospitalId", appointmentsController.getDepartmentsByHo
 router.get("/doctors", appointmentsController.getDoctorsByDepartment);
 
 
+// Protect with isLoggedIn (receptionist)
+router.post("/availability/remove", appointmentsController.removeDoctorAvailabilitySlots);
 
 
 module.exports = router;
