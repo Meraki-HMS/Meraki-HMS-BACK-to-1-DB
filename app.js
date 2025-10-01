@@ -12,6 +12,8 @@ const doctorRoutes = require('./src/routes/doctorRoutes');
 const hospitalRoutes = require('./src/routes/hospitalRoutes');
 const appointmentRoutes = require('./src/routes/appointmentsRoutes');
 const patientAppointmentRoutes = require('./src/routes/patientAppointmentRoutes');
+const bedRoutes = require('./src/routes/bedRoutes');
+const bedAssignmentRoutes = require('./src/routes/bedAssignmentRoutes');
 
 dotenv.config(); 
 
@@ -38,6 +40,8 @@ app.use("/doctors", doctorRoutes);
 app.use("/hospitals", hospitalRoutes);
 app.use("/api/appointments", appointmentRoutes); // General appointments
 app.use("/api/patient-appointments", patientAppointmentRoutes); // Patient-specific appointments
+app.use("/beds", bedRoutes);
+app.use("/AssignBed", bedAssignmentRoutes);
 
 // Start server
 const PORT = process.env.PORT || 3000;
