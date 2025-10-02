@@ -1,7 +1,10 @@
 // app.js
+
+const dotenv = require('dotenv');
+dotenv.config(); 
 const express = require('express');
 const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
+//const dotenv = require('dotenv');
 const connectDB = require('./src/config/ConnectToMongoDb');
 
 // Route imports
@@ -15,7 +18,7 @@ const patientAppointmentRoutes = require('./src/routes/patientAppointmentRoutes'
 const bedRoutes = require('./src/routes/bedRoutes');
 const bedAssignmentRoutes = require('./src/routes/bedAssignmentRoutes');
 
-dotenv.config(); 
+//dotenv.config(); 
 
 // Initialize app
 const app = express();
@@ -42,6 +45,8 @@ app.use("/api/appointments", appointmentRoutes); // General appointments
 app.use("/api/patient-appointments", patientAppointmentRoutes); // Patient-specific appointments
 app.use("/beds", bedRoutes);
 app.use("/AssignBed", bedAssignmentRoutes);
+
+
 
 // Start server
 const PORT = process.env.PORT || 3000;
